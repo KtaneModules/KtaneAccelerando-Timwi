@@ -360,11 +360,10 @@ public class AccelerandoScript : MonoBehaviour
 
     IEnumerator TwitchHandleForcedSolve()
     {
-        Debug.LogFormat(@"[Yes and No #{0}] Module was force solved by TP.", moduleId);
+        Debug.LogFormat(@"[Accelerando #{0}] Module was force solved by TP.", moduleId);
         Go.OnInteract();
         for (int i = 0; i < list.Count();)
         {
-            yield return true;
             yield return new WaitUntil(() => newLetter);
             newLetter = false;
             if (list.Contains(pairs[currentPair].Number))
@@ -372,6 +371,11 @@ public class AccelerandoScript : MonoBehaviour
                 Char.OnInteract();
                 i++;
             }
+        }
+        while (!moduleSolved)
+        {
+            yield return true;
+            yield return new WaitForSeconds(.05f);
         }
         yield break;
     }
