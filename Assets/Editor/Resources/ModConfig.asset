@@ -14,11 +14,9 @@ MonoBehaviour:
   id: accelerando
   title: Accelerando
   author: Goofy
-  description: 'Keep track of an accelerating sequence of number-letter pairs and
-    press the correct letters.
-
-
-    Now with RuleSeed and TP support'
+  description: "This is a [b]re-upload[/b] of Goofy\u2019s module. Please [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2096759895]unsubscribe
+    from the old version[/url].\n\nKeep track of an accelerating sequence of number-letter
+    pairs and press the correct letters.\n\nIncludes rule-seed support and TP support."
   version: 2
   outputFolder: build
-  previewImage: {fileID: 2800000, guid: 7d3a7af33e342664e82340c2607f699b, type: 3}
+  previewImage: {fileID: 2800000, guid: 70d50f4a66c9b45468f62779b6e67679, type: 3}
