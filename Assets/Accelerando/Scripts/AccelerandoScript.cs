@@ -32,7 +32,6 @@ public class AccelerandoScript : MonoBehaviour
     bool correct;
     bool inputStarted;
     bool incorrect = false;
-    bool newLetter = false;
     int timesCorrect = 0;
     int currentPair = 0;
     int lastPair = -1;
@@ -83,6 +82,7 @@ public class AccelerandoScript : MonoBehaviour
         {
             if (moduleSolved || active)
                 return false;
+            currentPair = -1;
             Go.AddInteractionPunch();
             Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, Go.transform);
             StartCoroutine(Sequence());
@@ -185,7 +185,7 @@ public class AccelerandoScript : MonoBehaviour
 
         if (tries >= 500)
         {
-            Debug.LogFormat(@"<Accelerando #{0}> Couldn't find a solution after 50000 tries. Using default set!", moduleId);
+            Debug.LogFormat(@"<Accelerando #{0}> Couldn't find a solution after 500 tries. Using default set!", moduleId);
             pairs.Clear();
             listx.Clear();
             list.Clear();
@@ -236,7 +236,7 @@ public class AccelerandoScript : MonoBehaviour
                 inputStarted = false;
                 incorrect = false;
                 timesCorrect = 0;
-                currentPair = 0;
+                currentPair = -1;
                 lastPair = -1;
                 Generate();
             }
@@ -290,7 +290,6 @@ public class AccelerandoScript : MonoBehaviour
         for (int i = 0; i < 20; i++)
         {
             currentPair = i;
-            newLetter = true;
             if (list.Contains(pairs[i].Number))
                 correct = true;
             else
@@ -300,7 +299,6 @@ public class AccelerandoScript : MonoBehaviour
             GetComponent<KMSelectable>().UpdateChildren();
             yield return new WaitForSeconds(timings[i]);
         }
-        newLetter = false;
         Char1.text = "";
         Char2.text = "";
         Char1.transform.parent.gameObject.SetActive(false);
@@ -308,52 +306,44 @@ public class AccelerandoScript : MonoBehaviour
     }
 
 #pragma warning disable 414
-    private readonly string TwitchHelpMessage = @"!{0} go/start [press the GO button] | !{0} WLMN [press these letters (note: This will also press the GO button)]";
+    private readonly string TwitchHelpMessage = @"!{0} go/start [press the GO button] | !{0} WLMN [press these letters (note: this will also press the GO button)]";
 #pragma warning restore 414
+
     IEnumerator ProcessTwitchCommand(string command)
     {
-        Match m;
         if (moduleSolved)
         {
-            yield return null;
             yield return "sendtochaterror The module is already solved.";
             yield break;
         }
-        else if (active)
+
+        if (active)
         {
-            yield return null;
             yield return "sendtochaterror The module is currently displaying its sequence.";
             yield break;
         }
-        else if (Regex.IsMatch(command, @"^\s*(go|start)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+
+        if (Regex.IsMatch(command, @"^\s*(go|start)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
         {
             yield return null;
             Go.OnInteract();
             yield break;
         }
-        else if ((m = Regex.Match(command, @"^\s*[ABCDEFGHIJKLMNOPQRSTUVWXYZ]+\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Success)
+
+        if (Regex.IsMatch(command, @"^\s*[ABCDEFGHIJKLMNOPQRSTUVWXYZ]+\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
         {
             yield return null;
-            var letters = m.Groups[0].ToString();
+            var letters = new HashSet<char>(command.ToUpperInvariant().Where(c => !char.IsWhiteSpace(c)));
             Go.OnInteract();
-            for (int i = 0; i < letters.Length;)
+            yield return null;
+            while (active && letters.Count > 0)
             {
-                yield return true;
-                yield return new WaitUntil(() => newLetter || !active);
-                if (!active)
-                    yield break;
-                newLetter = false;
-                if (letters.Contains(pairs[currentPair].Letter))
-                {
+                if (currentPair != -1 && letters.Remove(pairs[currentPair].Letter[0]))
                     Char.OnInteract();
-                    i++;
-                }
+                yield return null;
             }
-            yield break;
-        }
-        else
-        {
-            yield return "sendtochaterror Invalid Command.";
+            yield return "solve";
+            yield return "strike";
             yield break;
         }
     }
@@ -362,21 +352,16 @@ public class AccelerandoScript : MonoBehaviour
     {
         Debug.LogFormat(@"[Accelerando #{0}] Module was force solved by TP.", moduleId);
         Go.OnInteract();
-        for (int i = 0; i < list.Count();)
+        yield return null;
+        var stillToPress = new HashSet<int>(list);
+        while (active && stillToPress.Count > 0)
         {
-            yield return new WaitUntil(() => newLetter);
-            newLetter = false;
-            if (list.Contains(pairs[currentPair].Number))
-            {
+            if (currentPair != -1 && stillToPress.Remove(pairs[currentPair].Number))
                 Char.OnInteract();
-                i++;
-            }
+            yield return null;
         }
+
         while (!moduleSolved)
-        {
             yield return true;
-            yield return new WaitForSeconds(.05f);
-        }
-        yield break;
     }
 }
